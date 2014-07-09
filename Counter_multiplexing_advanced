@@ -1,0 +1,157 @@
+/*
+ READ ME!!
+--Down counter program for 8051 in embedded C
+--Using Seven Segment Display Multiplexing
+--Theoretical Detailed Program.
+--Enable pins of SSD's are connected to Pin 0 and 1 of Port 1
+--Port 1 is control
+--Port 2 is LSB/MSB
+**By Prathyush**
+
+General Information:
+
+BCD[7]= Hexadecimal
+7 segment interfacing 
+
+Format:
+00000000
+hgfedcba
+     
+	 a
+     _ 
+ f | _ | b
+     g
+ e | _ | c
+     d      .h
+   
+Digit  --  Binary     --  Hexa
+0          0100 0000 	  40H                     
+1          1111 1001      F9H
+2		   0010 0100      24H
+3		   0011 0000 	  30H
+4		   0001 1001	  19H
+5		   0001 0010	  12H
+6		   0000 0010	  02H
+7		   1111 1000	  F8H
+8		   0000 0000	  00H
+9  		   0001 0000	  10H
+
+
+Program flow:
+
+main function
+	--initialization function
+	--calculation
+		--delay function
+*/
+
+
+#include<reg51.h>
+#include<assert.h>
+#include<stdlib.h>
+#include<stdio.h>
+sbit ss1_ctrl=P1^0;
+sbit ss2_ctrl=P1^1;
+unsigned int i,t=7,temp,num1,num2,x,y,h,temp1;
+unsigned int digits[10]={0x40,0xF9,0x24,0x30,0x19,0x12,0x02,0xF8,0x00,0x10}; //refer the above table
+
+//initialization part
+void init()
+{
+	P1=0x00;
+	P2=0x00;
+	P3=0x00;
+	ss1_ctrl=1;
+	ss1_ctrl=1;
+	TMOD=0x01;
+	TH0=0xff;
+	TR0=1;
+	P1=0x00;
+	ss2_ctrl=1;
+	P2=0xF8;//Display 7 in ss2
+	delay();//Remove this delay
+	ss2_ctrl=0;
+	ss1_ctrl=1;
+	P2=0x40;//Display 0 in ss1
+	delay();
+	ss1_ctrl=0;
+}
+
+//delay part
+//1.Using built in timer method
+//Delay function using builtin timers generating 1s delay
+/*
+void delay (void) // Delay function using Timer 0 for 1s.
+{
+	for(h=0;h<20;h++)//50ms * 20 = 1s
+	{
+		TMOD &=0xF0;
+		TMOD |=0x01;
+		//TMOD=0x01; //can also be used
+		ET0 =0;
+		TH0 =0x3C;
+		TL0 =0xB0;
+		TF0 =0;
+		TR0 =1;
+		while(TF0==0);
+		TR0=0;
+	}
+}
+*/
+
+//2. Use delay_ms(int sec) or msdelay(int ms) as provided by libraries (More Efficient)
+
+/*
+//3.Using looping technique and calculating machine cycles
+void delay(unsigned int del)
+{
+for(j=0;j<del;j++)
+	{
+	for(k=0;k<1000;k++)
+		{
+		for(k=0;k<1275;k++)
+		}
+	}
+}
+*/
+
+//Interfacing Part
+void inf( unsigned int num1, unsigned int num2)
+{
+	if(num2==t)//sets num1
+	{
+		ss2_ctrl=0;
+		ss1_ctrl=1;
+		P2=digits[num1];
+		delay();		
+	}
+	else//sets num2
+	{
+		ss1_ctrl=0;
+		ss2_ctrl=1;
+		P2=digits[num2];
+		delay();//Remove this delay 
+				if(num1==9)
+				{
+					ss2_ctrl=0;
+					ss1_ctrl=1;
+					P2=digits[num1];
+					delay();
+				}
+		t--;
+	}
+}
+
+//Main part
+void main()
+{
+	init();// initialize parameters	
+		for(i=70;i>0;i--)//change the value of i for your requirements
+		{	
+			temp=i;
+			num1=temp%10;//to get LSB
+			temp=temp/10;//to get MSB
+			num2=temp;
+			inf(num1,num2);//interfacing
+		}
+}
